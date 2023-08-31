@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+
+<meta name="date" content="2023-08-31" />
+
+<title>Using dropout</title>
+
+<script>// Pandoc 2.9 adds attributes on both header and div. We remove the former (to
+// be compatible with the behavior of Pandoc < 2.8).
+document.addEventListener('DOMContentLoaded', function(e) {
+  var hs = document.querySelectorAll("div.section[class*='level'] > :first-child");
+  var i, h, a;
+  for (i = 0; i < hs.length; i++) {
+    h = hs[i];
+    if (!/^h[1-6]$/i.test(h.tagName)) continue;  // it should be a header h1-h6
+    a = h.attributes;
+    while (a.length > 0) h.removeAttribute(a[0].name);
+  }
+});
+</script>
+
+<style type="text/css">
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+span.underline{text-decoration: underline;}
+div.column{display: inline-block; vertical-align: top; width: 50%;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+</style>
+
+
+
+<style type="text/css">
+code {
+white-space: pre;
+}
+.sourceCode {
+overflow: visible;
+}
+</style>
+<style type="text/css" data-origin="pandoc">
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+{ counter-reset: source-line 0; }
+pre.numberSource code > span
+{ position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+{ content: counter(source-line);
+position: relative; left: -1em; text-align: right; vertical-align: baseline;
+border: none; display: inline-block;
+-webkit-touch-callout: none; -webkit-user-select: none;
+-khtml-user-select: none; -moz-user-select: none;
+-ms-user-select: none; user-select: none;
+padding: 0 4px; width: 4em;
+color: #aaaaaa;
+}
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa; padding-left: 4px; }
+div.sourceCode
+{ }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } 
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.at { color: #7d9029; } 
+code span.bn { color: #40a070; } 
+code span.bu { color: #008000; } 
+code span.cf { color: #007020; font-weight: bold; } 
+code span.ch { color: #4070a0; } 
+code span.cn { color: #880000; } 
+code span.co { color: #60a0b0; font-style: italic; } 
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.do { color: #ba2121; font-style: italic; } 
+code span.dt { color: #902000; } 
+code span.dv { color: #40a070; } 
+code span.er { color: #ff0000; font-weight: bold; } 
+code span.ex { } 
+code span.fl { color: #40a070; } 
+code span.fu { color: #06287e; } 
+code span.im { color: #008000; font-weight: bold; } 
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.kw { color: #007020; font-weight: bold; } 
+code span.op { color: #666666; } 
+code span.ot { color: #007020; } 
+code span.pp { color: #bc7a00; } 
+code span.sc { color: #4070a0; } 
+code span.ss { color: #bb6688; } 
+code span.st { color: #4070a0; } 
+code span.va { color: #19177c; } 
+code span.vs { color: #4070a0; } 
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } 
+</style>
+<script>
+// apply pandoc div.sourceCode style to pre.sourceCode instead
+(function() {
+  var sheets = document.styleSheets;
+  for (var i = 0; i < sheets.length; i++) {
+    if (sheets[i].ownerNode.dataset["origin"] !== "pandoc") continue;
+    try { var rules = sheets[i].cssRules; } catch (e) { continue; }
+    var j = 0;
+    while (j < rules.length) {
+      var rule = rules[j];
+      // check if there is a div.sourceCode rule
+      if (rule.type !== rule.STYLE_RULE || rule.selectorText !== "div.sourceCode") {
+        j++;
+        continue;
+      }
+      var style = rule.style.cssText;
+      // check if color or background-color is set
+      if (rule.style.color === '' && rule.style.backgroundColor === '') {
+        j++;
+        continue;
+      }
+      // replace div.sourceCode by a pre.sourceCode rule
+      sheets[i].deleteRule(j);
+      sheets[i].insertRule('pre.sourceCode{' + style + '}', j);
+    }
+  }
+})();
+</script>
+
+
+
+
+<style type="text/css">body {
+background-color: #fff;
+margin: 1em auto;
+max-width: 700px;
+overflow: visible;
+padding-left: 2em;
+padding-right: 2em;
+font-family: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+font-size: 14px;
+line-height: 1.35;
+}
+#TOC {
+clear: both;
+margin: 0 0 10px 10px;
+padding: 4px;
+width: 400px;
+border: 1px solid #CCCCCC;
+border-radius: 5px;
+background-color: #f6f6f6;
+font-size: 13px;
+line-height: 1.3;
+}
+#TOC .toctitle {
+font-weight: bold;
+font-size: 15px;
+margin-left: 5px;
+}
+#TOC ul {
+padding-left: 40px;
+margin-left: -1.5em;
+margin-top: 5px;
+margin-bottom: 5px;
+}
+#TOC ul ul {
+margin-left: -2em;
+}
+#TOC li {
+line-height: 16px;
+}
+table {
+margin: 1em auto;
+border-width: 1px;
+border-color: #DDDDDD;
+border-style: outset;
+border-collapse: collapse;
+}
+table th {
+border-width: 2px;
+padding: 5px;
+border-style: inset;
+}
+table td {
+border-width: 1px;
+border-style: inset;
+line-height: 18px;
+padding: 5px 5px;
+}
+table, table th, table td {
+border-left-style: none;
+border-right-style: none;
+}
+table thead, table tr.even {
+background-color: #f7f7f7;
+}
+p {
+margin: 0.5em 0;
+}
+blockquote {
+background-color: #f6f6f6;
+padding: 0.25em 0.75em;
+}
+hr {
+border-style: solid;
+border: none;
+border-top: 1px solid #777;
+margin: 28px 0;
+}
+dl {
+margin-left: 0;
+}
+dl dd {
+margin-bottom: 13px;
+margin-left: 13px;
+}
+dl dt {
+font-weight: bold;
+}
+ul {
+margin-top: 0;
+}
+ul li {
+list-style: circle outside;
+}
+ul ul {
+margin-bottom: 0;
+}
+pre, code {
+background-color: #f7f7f7;
+border-radius: 3px;
+color: #333;
+white-space: pre-wrap; 
+}
+pre {
+border-radius: 3px;
+margin: 5px 0px 10px 0px;
+padding: 10px;
+}
+pre:not([class]) {
+background-color: #f7f7f7;
+}
+code {
+font-family: Consolas, Monaco, 'Courier New', monospace;
+font-size: 85%;
+}
+p > code, li > code {
+padding: 2px 0px;
+}
+div.figure {
+text-align: center;
+}
+img {
+background-color: #FFFFFF;
+padding: 2px;
+border: 1px solid #DDDDDD;
+border-radius: 3px;
+border: 1px solid #CCCCCC;
+margin: 0 5px;
+}
+h1 {
+margin-top: 0;
+font-size: 35px;
+line-height: 40px;
+}
+h2 {
+border-bottom: 4px solid #f7f7f7;
+padding-top: 10px;
+padding-bottom: 2px;
+font-size: 145%;
+}
+h3 {
+border-bottom: 2px solid #f7f7f7;
+padding-top: 10px;
+font-size: 120%;
+}
+h4 {
+border-bottom: 1px solid #f7f7f7;
+margin-left: 8px;
+font-size: 105%;
+}
+h5, h6 {
+border-bottom: 1px solid #ccc;
+font-size: 105%;
+}
+a {
+color: #0033dd;
+text-decoration: none;
+}
+a:hover {
+color: #6666ff; }
+a:visited {
+color: #800080; }
+a:visited:hover {
+color: #BB00BB; }
+a[href^="http:"] {
+text-decoration: underline; }
+a[href^="https:"] {
+text-decoration: underline; }
+
+code > span.kw { color: #555; font-weight: bold; } 
+code > span.dt { color: #902000; } 
+code > span.dv { color: #40a070; } 
+code > span.bn { color: #d14; } 
+code > span.fl { color: #d14; } 
+code > span.ch { color: #d14; } 
+code > span.st { color: #d14; } 
+code > span.co { color: #888888; font-style: italic; } 
+code > span.ot { color: #007020; } 
+code > span.al { color: #ff0000; font-weight: bold; } 
+code > span.fu { color: #900; font-weight: bold; } 
+code > span.er { color: #a61717; background-color: #e3d2d2; } 
+</style>
+
+
+
+
+</head>
+
+<body>
+
+
+
+
+<h1 class="title toc-ignore">Using dropout</h1>
+<h4 class="date">2023-08-31</h4>
+
+
+
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="fu">library</span>(dropout)</span></code></pre></div>
+<div id="introduction" class="section level2">
+<h2>Introduction</h2>
+<p>Survey data often encounters the challenge of dropout – instances
+where participants fail to complete sections of the survey due to
+interruptions or omissions. Handling dropouts effectively is crucial for
+accurate data analysis and interpretation. The dropout package provides
+a solution by offering insights into participant behavior during the
+survey process.</p>
+</div>
+<div id="understanding-the-dropout-package" class="section level2">
+<h2>Understanding the Dropout Package</h2>
+<p>The dropout package empowers you with the capability to extract
+valuable insights from your dataset, such as:</p>
+<ul>
+<li>Identifying the specific survey points where participants tend to
+stop completing the survey.</li>
+<li>Detecting sections that are frequently skipped by respondents.</li>
+<li>Quantifying the extent and locations of dropouts within the
+survey.</li>
+<li>Estimating the proportion of missing values attributed to dropouts
+in each column.</li>
+<li>Profiling respondents who discontinued the survey and pinpointing
+their dropout points.</li>
+<li>And much more…</li>
+</ul>
+<p>By leveraging these insights, you can:</p>
+<ul>
+<li>Enhance data cleaning procedures by distinguishing dropouts and
+tailoring your approach accordingly.</li>
+<li>Adjust your analytical strategies to accommodate dropout-related
+biases in the dataset.</li>
+<li>Analyze omitted sections in conjunction with the collected data,
+yielding a comprehensive understanding.</li>
+</ul>
+<p>In this vignette, we will provide an in-depth overview of the dropout
+package’s features and their practical utilization. We will use a sample
+dataset named “flying” to illustrate these concepts. This is a modified
+version of the Flying Etiquette Survey data behind the story: 41 percent
+of flyers say it’s rude to recline your seat on an airplane. You can
+load this preinstalled dataset into your environment using the command
+<code>data(flying)</code>.</p>
+</div>
+<div id="prerequisites" class="section level2">
+<h2>Prerequisites</h2>
+<p>While the dropout package can function independently, integrating it
+with the tidyverse ecosystem (especially using dplyr) can significantly
+enhance your workflow. However all of the methods used in this Vignette
+can be transferred to using Base R code exclusively.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a><span class="fu">library</span>(dplyr)</span>
+<span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a><span class="fu">data</span>(<span class="st">&quot;flying&quot;</span>)</span></code></pre></div>
+</div>
+<div id="exploring-dropout-insights-with-drop_summary" class="section level2">
+<h2>Exploring Dropout Insights with <code>drop_summary</code></h2>
+<p>Let’s embark on a deeper exploration of the <code>dropout</code>
+package by delving into the <code>drop_summary</code> function. This
+function serves as a pivotal tool for gaining in-depth insights into
+dropout patterns within your dataset. To effectively utilize the
+<code>drop_summary</code> function, you should specify the last column
+in your dataset that corresponds to the survey items. If you encounter a
+warning message while using this function, it could be attributed to
+either of the following reasons:</p>
+<ol style="list-style-type: decimal">
+<li>Your dataset contains no instances of dropout.</li>
+<li>Additional columns beyond the survey items exist, but they aren’t
+correctly identified as such.</li>
+</ol>
+<p>For example, in the “flying” dataset, the final survey-related item
+is stored in the “location_census_region” column. Following this, the
+“survey_type” column contains supplementary survey information. Many
+datasets incorporate similar non-survey-related data, and it’s crucial
+to consider such cases. If the last column is left unspecified, the
+<code>drop_summary</code> function will assume that only survey-related
+items are present.</p>
+<p>To gain a comprehensive overview of the dropout patterns within your
+dataset, consider the following code snippet:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a><span class="fu">drop_summary</span>(flying, <span class="st">&quot;location_census_region&quot;</span>)</span>
+<span id="cb3-2"><a href="#cb3-2" tabindex="-1"></a><span class="co">#&gt; # A tibble: 27 × 8</span></span>
+<span id="cb3-3"><a href="#cb3-3" tabindex="-1"></a><span class="co">#&gt;    column_name           dropout drop_rate drop_na section_na single_na missing</span></span>
+<span id="cb3-4"><a href="#cb3-4" tabindex="-1"></a><span class="co">#&gt;    &lt;chr&gt;                   &lt;int&gt;     &lt;dbl&gt;   &lt;dbl&gt;      &lt;dbl&gt;     &lt;dbl&gt;   &lt;dbl&gt;</span></span>
+<span id="cb3-5"><a href="#cb3-5" tabindex="-1"></a><span class="co">#&gt;  1 respondent_id               0      0          0          0         0       0</span></span>
+<span id="cb3-6"><a href="#cb3-6" tabindex="-1"></a><span class="co">#&gt;  2 travel_frequency            0      0          0          0         0       0</span></span>
+<span id="cb3-7"><a href="#cb3-7" tabindex="-1"></a><span class="co">#&gt;  3 seat_recline               18      0.02      18        164         0     182</span></span>
+<span id="cb3-8"><a href="#cb3-8" tabindex="-1"></a><span class="co">#&gt;  4 height                      0      0.02      18        164        12     194</span></span>
+<span id="cb3-9"><a href="#cb3-9" tabindex="-1"></a><span class="co">#&gt;  5 children_under_18           1      0.02      19        164         6     189</span></span>
+<span id="cb3-10"><a href="#cb3-10" tabindex="-1"></a><span class="co">#&gt;  6 two_armrests                1      0.02      20        164         0     184</span></span>
+<span id="cb3-11"><a href="#cb3-11" tabindex="-1"></a><span class="co">#&gt;  7 middle_armrest              0      0.02      20        164         0     184</span></span>
+<span id="cb3-12"><a href="#cb3-12" tabindex="-1"></a><span class="co">#&gt;  8 window_shade                0      0.02      20        164         0     184</span></span>
+<span id="cb3-13"><a href="#cb3-13" tabindex="-1"></a><span class="co">#&gt;  9 moving_to_unsold_seat       1      0.02      21        164         0     185</span></span>
+<span id="cb3-14"><a href="#cb3-14" tabindex="-1"></a><span class="co">#&gt; 10 talking_to_seatmate         0      0.02      21        164         0     185</span></span>
+<span id="cb3-15"><a href="#cb3-15" tabindex="-1"></a><span class="co">#&gt; # ℹ 17 more rows</span></span>
+<span id="cb3-16"><a href="#cb3-16" tabindex="-1"></a><span class="co">#&gt; # ℹ 1 more variable: completion_rate &lt;dbl&gt;</span></span></code></pre></div>
+<p>Now, let’s delve into the intricacies of the
+<code>drop_summary</code> function and the valuable insights it provides
+in a structured format.</p>
+<div id="understanding-the-output-of-drop_summary" class="section level4">
+<h4>Understanding the Output of <code>drop_summary</code></h4>
+<p>When you use the <code>drop_summary</code> function, the output you
+receive is a compact yet informative summary, packaged as either a
+dataframe or a tibble. This summary consists of multiple columns, each
+of which provides insights into different dimensions of dropout analysis
+within your dataset.</p>
+</div>
+<div id="output-columns" class="section level4">
+<h4>Output Columns:</h4>
+<ul>
+<li><p><strong><code>column_name</code></strong>: Lists the names of the
+columns from your dataset that have been analyzed for dropouts.</p></li>
+<li><p><strong><code>dropout</code></strong>: Contains the frequency of
+dropouts within each listed column, allowing you to see where dropout
+rates might be the most significant.</p></li>
+<li><p><strong><code>drop_rate</code></strong>: Shows the overall
+percentage of dropout incidents in each column. This is useful for
+understanding the relative impact of dropouts in various parts of your
+dataset.</p></li>
+<li><p><strong><code>drop_na</code></strong>: Provides the percentage of
+missing values in each column that can be attributed specifically to
+dropouts. This offers insights into the nature of missing data.</p></li>
+<li><p><strong><code>section_na</code></strong>: Indicates occurrences
+of missing values that span at least <code>n</code> consecutive columns
+(<code>n</code> defaults to 3). You can adjust this parameter using
+<code>section_min</code> as shown below:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a><span class="fu">drop_summary</span>(data, last_col, <span class="at">section_min =</span> n)</span></code></pre></div>
+<p>This column is particularly useful for identifying participants who
+might skip entire sections of a survey without dropping out
+completely.</p></li>
+<li><p><strong><code>single_na</code></strong>: Reveals the percentage
+of single-instance missing values in each column, which are not
+associated with systematic dropouts or section skips.</p></li>
+<li><p><strong><code>completion_rate</code></strong>: Denotes the
+overall data completion rate for each analyzed column, enabling you to
+gauge the integrity and reliability of your dataset.</p></li>
+</ul>
+</div>
+</div>
+<div id="using-drop_detect-to-identify-dropouts" class="section level2">
+<h2>Using <code>drop_detect</code> to Identify Dropouts</h2>
+<p>One of the core tools in the <code>dropout</code> package is the
+<code>drop_detect</code> function. This function serves as a
+comprehensive tool for isolating and understanding individual
+participant dropout behaviors. Specifically, it reveals whether a
+participant has left the survey prematurely and pinpoints the exact
+juncture at which the dropout took place.</p>
+<p>The structure and usage of <code>drop_detect</code> are intentionally
+made to resonate with the <code>drop_summary</code> function, ensuring
+consistency and ease of adoption.</p>
+<div id="output-columns-1" class="section level3">
+<h3>Output Columns:</h3>
+<ul>
+<li><p><strong><code>dropout</code></strong>: A Boolean column (TRUE or
+FALSE). A <code>TRUE</code> value signifies that the respective
+participant exited the survey prematurely.</p></li>
+<li><p><strong><code>dropout_column</code></strong>: For those marked as
+<code>TRUE</code> in the <code>dropout</code> column, this field
+specifies the exact column or question that triggered the
+dropout.</p></li>
+<li><p><strong><code>dropout_index</code></strong>: Offers a direct
+reference to the row number where the dropout incident occurred,
+facilitating easier traceability.</p></li>
+</ul>
+</div>
+<div id="example-usage" class="section level3">
+<h3>Example Usage:</h3>
+<p>For practical insights, consider applying <code>drop_detect</code> on
+the ‘flying’ dataset. Here’s how you can achieve this:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a><span class="fu">drop_detect</span>(flying, <span class="st">&quot;location_census_region&quot;</span>)</span></code></pre></div>
+<p>Moreover, if you wish to append the extracted dropout details back to
+the original dataset, you can employ the <code>bind_cols</code> function
+from the <code>dplyr</code> package:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a><span class="fu">drop_detect</span>(flying, <span class="st">&quot;location_census_region&quot;</span>) <span class="sc">%&gt;%</span> </span>
+<span id="cb6-2"><a href="#cb6-2" tabindex="-1"></a>  <span class="fu">bind_cols</span>(flying, .)</span></code></pre></div>
+<p>Such integration of dropout specifics into the primary dataset can
+act as a preliminary step for more nuanced analyses, like zoning into
+specific dropout triggers, assessing commonalities among dropouts, or
+any other relevant exploratory exercises.</p>
+<p>Subsequent sections will delve into exemplified applications of this
+integrated approach.</p>
+</div>
+</div>
+<div id="practical-workflow-examples" class="section level2">
+<h2>Practical Workflow Examples</h2>
+<div id="cleaning-early-dropouts" class="section level3">
+<h3>Cleaning Early Dropouts</h3>
+<p>The <code>drop_detect</code> function can be useful for identifying
+and filtering out early dropouts, i.e., participants who stopped
+answering the survey at a specific column. For example, you can filter
+for participants who did not drop out early, or had a ‘late’ dropout in
+the demographic part of the questions, using the
+<code>dropout_index</code>:</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a>flying <span class="sc">%&gt;%</span> </span>
+<span id="cb7-2"><a href="#cb7-2" tabindex="-1"></a>  <span class="fu">drop_detect</span>(<span class="st">&quot;location_census_region&quot;</span>) <span class="sc">%&gt;%</span> </span>
+<span id="cb7-3"><a href="#cb7-3" tabindex="-1"></a>  <span class="fu">bind_cols</span>(flying, .) <span class="sc">%&gt;%</span> </span>
+<span id="cb7-4"><a href="#cb7-4" tabindex="-1"></a>  <span class="fu">filter</span>(dropout <span class="sc">==</span> <span class="cn">FALSE</span> <span class="sc">|</span> dropout_index <span class="sc">&gt;</span> <span class="dv">22</span>)</span></code></pre></div>
+</div>
+<div id="analyzing-specific-sections" class="section level3">
+<h3>Analyzing Specific Sections</h3>
+<p>If you’re interested in a specific section of questions and want to
+filter for dropouts and <code>section_na</code>, you have two
+approaches:</p>
+<div id="option-1-creating-a-subset" class="section level4">
+<h4>Option 1: Creating a Subset</h4>
+<p>In this approach, we create a subset of the data containing only the
+first 22 columns. We then apply the <code>drop_detect</code> function to
+this subset to identify dropouts and other relevant indicators:</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" tabindex="-1"></a>flying <span class="sc">%&gt;%</span> </span>
+<span id="cb8-2"><a href="#cb8-2" tabindex="-1"></a>  <span class="fu">select</span>(<span class="dv">1</span><span class="sc">:</span><span class="dv">22</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb8-3"><a href="#cb8-3" tabindex="-1"></a>  <span class="fu">drop_detect</span>() <span class="sc">%&gt;%</span> </span>
+<span id="cb8-4"><a href="#cb8-4" tabindex="-1"></a>  <span class="fu">bind_cols</span>(flying, .) <span class="sc">%&gt;%</span> </span>
+<span id="cb8-5"><a href="#cb8-5" tabindex="-1"></a>  <span class="fu">filter</span>(dropout <span class="sc">==</span> <span class="cn">FALSE</span>)</span></code></pre></div>
+</div>
+<div id="option-2-setting-the-last_col-parameter" class="section level4">
+<h4>Option 2: Setting the <code>last_col</code> Parameter</h4>
+<p>You can specify the <code>last_col</code> parameter to the last
+question in the section, to identify all dropouts up to that point:</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" tabindex="-1"></a>flying <span class="sc">%&gt;%</span> </span>
+<span id="cb9-2"><a href="#cb9-2" tabindex="-1"></a>  <span class="fu">drop_detect</span>(<span class="st">&quot;smoking_violation&quot;</span>) <span class="sc">%&gt;%</span> </span>
+<span id="cb9-3"><a href="#cb9-3" tabindex="-1"></a>  <span class="fu">bind_cols</span>(flying, .) <span class="sc">%&gt;%</span> </span>
+<span id="cb9-4"><a href="#cb9-4" tabindex="-1"></a>  <span class="fu">filter</span>(dropout <span class="sc">==</span> <span class="cn">FALSE</span>)</span></code></pre></div>
+</div>
+</div>
+<div id="comparative-analysis-age-and-gender" class="section level3">
+<h3>Comparative Analysis: Age and Gender</h3>
+<p>One practical application is to compare the demographics (e.g., age
+and gender) between those who left out a section and those who did not.
+The following code generates a bar graph that breaks down dropout rates
+by age group and gender.</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" tabindex="-1"></a><span class="fu">library</span>(ggplot2)</span>
+<span id="cb10-2"><a href="#cb10-2" tabindex="-1"></a></span>
+<span id="cb10-3"><a href="#cb10-3" tabindex="-1"></a>flying <span class="sc">%&gt;%</span></span>
+<span id="cb10-4"><a href="#cb10-4" tabindex="-1"></a>  <span class="fu">drop_detect</span>(<span class="st">&quot;smoking_violation&quot;</span>) <span class="sc">%&gt;%</span> </span>
+<span id="cb10-5"><a href="#cb10-5" tabindex="-1"></a>  <span class="fu">bind_cols</span>(flying, .) <span class="sc">%&gt;%</span> </span>
+<span id="cb10-6"><a href="#cb10-6" tabindex="-1"></a>  <span class="fu">filter</span>(<span class="sc">!</span><span class="fu">is.na</span>(gender)) <span class="sc">%&gt;%</span> </span>
+<span id="cb10-7"><a href="#cb10-7" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">age =</span> <span class="fu">factor</span>(age, <span class="at">levels =</span> <span class="fu">c</span>(<span class="st">&quot;18-29&quot;</span>, <span class="st">&quot;30-44&quot;</span>, <span class="st">&quot;45-60&quot;</span>, <span class="st">&quot;&gt; 60&quot;</span>))) <span class="sc">%&gt;%</span> </span>
+<span id="cb10-8"><a href="#cb10-8" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x=</span>age, <span class="at">fill=</span>dropout)) <span class="sc">+</span></span>
+<span id="cb10-9"><a href="#cb10-9" tabindex="-1"></a>  <span class="fu">geom_bar</span>(<span class="at">position=</span><span class="st">&quot;dodge&quot;</span>) <span class="sc">+</span></span>
+<span id="cb10-10"><a href="#cb10-10" tabindex="-1"></a>  <span class="fu">facet_grid</span>(gender <span class="sc">~</span> .) <span class="sc">+</span></span>
+<span id="cb10-11"><a href="#cb10-11" tabindex="-1"></a>  <span class="fu">theme</span>(<span class="at">axis.text.x =</span> <span class="fu">element_text</span>(<span class="at">angle =</span> <span class="dv">90</span>, <span class="at">hjust =</span> <span class="dv">1</span>))</span></code></pre></div>
+<div class="float">
+<img src="data:image/png;base64,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" alt="Comparative Analysis of Age and Gender against Dropout Rates" />
+<div class="figcaption">Comparative Analysis of Age and Gender against
+Dropout Rates</div>
+</div>
+<p>By visualizing the data, you can more easily discern patterns and
+disparities among different demographic groups with respect to dropout
+rates.</p>
+</div>
+<div id="exploring-relationships-dropout-age-and-gender" class="section level3">
+<h3>Exploring Relationships: Dropout, Age and Gender</h3>
+<p>Another interesting avenue is to explore whether there’s a
+relationship between dropout behavior (or in this case leaving out a
+section) and demographic variables like age and gender:</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" tabindex="-1"></a>test <span class="ot">&lt;-</span> flying <span class="sc">%&gt;%</span></span>
+<span id="cb11-2"><a href="#cb11-2" tabindex="-1"></a>  <span class="fu">drop_detect</span>(<span class="st">&quot;smoking_violation&quot;</span>) <span class="sc">%&gt;%</span> </span>
+<span id="cb11-3"><a href="#cb11-3" tabindex="-1"></a>  <span class="fu">bind_cols</span>(flying, .) <span class="sc">%&gt;%</span> </span>
+<span id="cb11-4"><a href="#cb11-4" tabindex="-1"></a>  <span class="fu">filter</span>(<span class="sc">!</span><span class="fu">is.na</span>(gender)) <span class="sc">%&gt;%</span></span>
+<span id="cb11-5"><a href="#cb11-5" tabindex="-1"></a>  <span class="fu">select</span>(dropout, age, gender) <span class="sc">%&gt;%</span> </span>
+<span id="cb11-6"><a href="#cb11-6" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">dropout =</span> <span class="fu">as.numeric</span>(<span class="fu">ifelse</span>(dropout <span class="sc">==</span> <span class="cn">TRUE</span>, <span class="dv">1</span>, <span class="dv">0</span>)))</span>
+<span id="cb11-7"><a href="#cb11-7" tabindex="-1"></a></span>
+<span id="cb11-8"><a href="#cb11-8" tabindex="-1"></a>glm_model <span class="ot">&lt;-</span> <span class="fu">glm</span>(dropout <span class="sc">~</span> gender <span class="sc">+</span> age, <span class="at">data =</span> test, <span class="at">family =</span> binomial)</span>
+<span id="cb11-9"><a href="#cb11-9" tabindex="-1"></a><span class="fu">print</span>(<span class="fu">summary</span>(glm_model))</span></code></pre></div>
+<p>This can be particularly useful for hypothesis testing and can aid in
+uncovering patterns in your data.</p>
+</div>
+</div>
+
+
+
+<!-- code folding -->
+
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>
