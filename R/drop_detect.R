@@ -19,10 +19,35 @@
 #' @seealso See vignette for detailed workflows and practical examples.
 #'
 #' @export
+#'
+#' @useDynLib dropout
+#' @importFrom Rcpp sourceCpp
+
+
 
 drop_detect <- function(data, last_col = NULL) {
- # Implementation of the function
- result_list <- drop_prepare(data, last_col)
- return(result_list$list_data)
+
+ if (is.null(last_col)) {
+  while (ncol(data) > 0) {
+   last_col <- ncol(data)
+   last_col_name <- colnames(data)[last_col]
+
+   if (all(!is.na(data[, last_col]))) {
+    data <- data |> dplyr::select(-last_col)
+   } else {
+    warning(paste("last_col set to", last_col_name))
+    break
+   }
+  }
+ } else {
+  # Select all columns up to last_col
+  data <- data |> dplyr::select(1:last_col)
+ }
+
+ result <- data |>
+  find_dropouts() |>
+  tibble::tibble()
+
+ return(result)
 }
 

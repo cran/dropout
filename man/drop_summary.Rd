@@ -4,7 +4,7 @@
 \alias{drop_summary}
 \title{Summarizing Dropouts in Surveys}
 \usage{
-drop_summary(data, last_col, section_min = 3)
+drop_summary(data, last_col = NULL, section_min = 3)
 }
 \arguments{
 \item{data}{A dataframe or tibble containing the survey data.}

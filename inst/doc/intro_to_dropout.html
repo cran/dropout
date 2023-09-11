@@ -11,7 +11,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 
 
-<meta name="date" content="2023-08-31" />
+<meta name="date" content="2023-09-11" />
 
 <title>Using dropout</title>
 
@@ -338,7 +338,7 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 
 
 <h1 class="title toc-ignore">Using dropout</h1>
-<h4 class="date">2023-08-31</h4>
+<h4 class="date">2023-09-11</h4>
 
 
 
@@ -387,10 +387,15 @@ load this preinstalled dataset into your environment using the command
 </div>
 <div id="prerequisites" class="section level2">
 <h2>Prerequisites</h2>
-<p>While the dropout package can function independently, integrating it
-with the tidyverse ecosystem (especially using dplyr) can significantly
-enhance your workflow. However all of the methods used in this Vignette
-can be transferred to using Base R code exclusively.</p>
+<p>The package is designed for effortless integration with widely used
+data wrangling libraries such as dplyr from the tidyverse ecosystem.
+These libraries provide a rich toolkit for data manipulation and
+analysis. Additionally, in a recent update, substantial portions of the
+package’s code were rewritten using C++, a high-performance programming
+language. This enhancement allows the <code>dropout</code> package to
+handle larger datasets efficiently. Consequently, it is well-suited for
+analyzing substantial volumes of data, making it a valuable tool for
+both small-scale and big data survey analyses.</p>
 <div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a><span class="fu">library</span>(dplyr)</span>
 <span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a><span class="fu">data</span>(<span class="st">&quot;flying&quot;</span>)</span></code></pre></div>
 </div>
@@ -401,21 +406,24 @@ package by delving into the <code>drop_summary</code> function. This
 function serves as a pivotal tool for gaining in-depth insights into
 dropout patterns within your dataset. To effectively utilize the
 <code>drop_summary</code> function, you should specify the last column
-in your dataset that corresponds to the survey items. If you encounter a
-warning message while using this function, it could be attributed to
-either of the following reasons:</p>
-<ol style="list-style-type: decimal">
-<li>Your dataset contains no instances of dropout.</li>
-<li>Additional columns beyond the survey items exist, but they aren’t
-correctly identified as such.</li>
-</ol>
+in your dataset that corresponds to the survey items. If you leave out
+this part of the function, the package will attempt to automatically
+detect whether the last columns are part of the survey items. This is
+achieved by excluding the trailing columns that do not contain any
+missing values (NAs). While this automatic detection can be convenient
+in many cases, it might not always align with the specific structure of
+your dataset.</p>
+<p>If the automatic detection behavior does not suit the needs of your
+dataset, you have the flexibility to set the last_col parameter
+explicitly. By doing so, you inform the package about the exact location
+of the last item in your survey data. This manual specification ensures
+precise alignment with your dataset’s structure and is particularly
+useful when dealing with unconventional or complex survey formats.</p>
 <p>For example, in the “flying” dataset, the final survey-related item
 is stored in the “location_census_region” column. Following this, the
 “survey_type” column contains supplementary survey information. Many
 datasets incorporate similar non-survey-related data, and it’s crucial
-to consider such cases. If the last column is left unspecified, the
-<code>drop_summary</code> function will assume that only survey-related
-items are present.</p>
+to consider such cases.</p>
 <p>To gain a comprehensive overview of the dropout patterns within your
 dataset, consider the following code snippet:</p>
 <div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a><span class="fu">drop_summary</span>(flying, <span class="st">&quot;location_census_region&quot;</span>)</span>
@@ -555,7 +563,9 @@ this subset to identify dropouts and other relevant indicators:</p>
 <div id="option-2-setting-the-last_col-parameter" class="section level4">
 <h4>Option 2: Setting the <code>last_col</code> Parameter</h4>
 <p>You can specify the <code>last_col</code> parameter to the last
-question in the section, to identify all dropouts up to that point:</p>
+question in the section, to identify all dropouts up to that point. If
+left out, the function will use the same detection steps of non survey
+related columns as described in <code>drop_summary</code> function.</p>
 <div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" tabindex="-1"></a>flying <span class="sc">%&gt;%</span> </span>
 <span id="cb9-2"><a href="#cb9-2" tabindex="-1"></a>  <span class="fu">drop_detect</span>(<span class="st">&quot;smoking_violation&quot;</span>) <span class="sc">%&gt;%</span> </span>
 <span id="cb9-3"><a href="#cb9-3" tabindex="-1"></a>  <span class="fu">bind_cols</span>(flying, .) <span class="sc">%&gt;%</span> </span>

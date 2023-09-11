@@ -27,16 +27,47 @@
 
 
 
-drop_summary <- function(data, last_col, section_min = 3) {
 
-  # Prepare the data
-  drop_df <- drop_prepare(data, last_col)
 
+drop_summary <- function(data, last_col = NULL, section_min = 3) {
+
+  if (is.null(last_col)) {
+    while (ncol(data) > 0) {
+      last_col <- ncol(data)
+      last_col_name <- colnames(data)[last_col]
+
+      if (all(!is.na(data[, last_col]))) {
+        data <- data |>
+          dplyr::select(-last_col)
+      } else {
+        warning(paste("last_col set to", last_col_name))
+        break
+      }
+    }
+  } else {
+    # Select all columns up to last_col
+    data <- data |>
+      dplyr::select(1:last_col)
+  }
+
+  result <- data |>
+    find_dropouts()
+
+  # save result in a list (df and index)
+  drop_df <- list(list_data = result,
+                  list_index =
+                    if(is.numeric(last_col)){
+                      last_col
+                    } else {
+                      which(names(data) == last_col)
+                    })
+
+  # Get the column index of the last column and the dropout columns
   col_index <- drop_df$list_index
   drop_df <- drop_df$list_data[-c(2,3)]
 
   # Maintaining original column order through factor levels
-  drop_df$dropout_column <- factor(drop_df$dropout_column, levels = names(data[, 1:col_index]))
+  drop_df$dropout_column <- factor(drop_df$dropout_col, levels = names(data[, 1:col_index]))
 
   # Group by 'dropout_column' and count occurrences
   grouped_counts <- table(drop_df$dropout_column)
@@ -48,6 +79,7 @@ drop_summary <- function(data, last_col, section_min = 3) {
   result_df$drop_rate <- round(cumsum(result_df$dropout) / nrow(data), 2)
   result_df$missing <- colSums(is.na(data[, 1:col_index]))
   result_df$completion_rate <- round((nrow(data) - result_df$missing) / nrow(data), 2)
+
 
   # performing drop_prepare sub sample also for section_dropout
   if (missing(last_col)) {
@@ -66,78 +98,14 @@ drop_summary <- function(data, last_col, section_min = 3) {
     }
 
     sec_data <- data[, 1:col_index]
-
-  }
-
-
-  # Group by 'dropout_column' and count occurrences
-  grouped_counts <- table(drop_df$dropout_column)
-
-  # Create a new data frame with the counts
-  result_df <- data.frame(column_name = names(grouped_counts), dropout = as.vector(grouped_counts))
-
-  # Compute drop rates and other metrics
-  result_df$drop_rate <- round(cumsum(result_df$dropout) / nrow(data), 2)
-  result_df$missing <- colSums(is.na(data[, 1:col_index]))
-  result_df$completion_rate <- round((nrow(data) - result_df$missing) / nrow(data), 2)
-
-  # performing drop_prepare sub sample also for section_dropout
-  if (missing(last_col)) {
-    sec_data <- data
-  } else {
-    if (is.character(last_col)) {
-      col_index <- which(names(data) == last_col)
-    } else if (is.numeric(last_col)) {
-      col_index <- last_col
-    } else {
-      stop("Column must be specified by name or index.")
-    }
-
-    if (length(col_index) != 1) {
-      stop("Column not found or ambiguous.")
-    }
-
-    sec_data <- data[, 1:col_index]
-
   }
   # Initialize variables for section dropout calculations
-  na_sequences_list <- list()
+  result <- list()
 
-  # Loop through each row of the sec_data
-  for (row_index in 1:nrow(sec_data)) {
-    row <- sec_data[row_index, ]
-
-    # Skip rows consisting entirely of NAs
-    if (all(is.na(row))) {
-      next
-    }
-
-    current_sequence <- c()
-    found_sequences <- list()
-
-    # Loop through each column of the row
-    for (i in 1:(ncol(sec_data) + 1)) {
-      if (i <= ncol(sec_data) && is.na(row[i])) {
-        current_sequence <- append(current_sequence, colnames(sec_data)[i])
-      } else {
-        if (length(current_sequence) >= section_min) {
-          last_column_in_sequence <- utils::tail(current_sequence, 1)
-          if (last_column_in_sequence != colnames(sec_data)[ncol(sec_data)]) {
-            found_sequences <- append(found_sequences, list(current_sequence))
-          }
-        }
-        current_sequence <- c()
-      }
-    }
-
-    # Store sequences for the current row
-    if (length(found_sequences) > 0) {
-      na_sequences_list[[row_index]] <- unlist(found_sequences, use.names = FALSE)
-    }
-  }
+  result <- find_na_sequences(sec_data, section_min)
 
   # Count how often each column appears in the sequences
-  column_counts <- data.frame(table(unlist(na_sequences_list)))
+  column_counts <- data.frame(table(unlist(result)))
 
   # Check if column_counts has any rows and columns, otherwise initialize it
   if (nrow(column_counts) == 0) {
@@ -168,18 +136,7 @@ drop_summary <- function(data, last_col, section_min = 3) {
   original_order <- match(result_df$column_name, names(data[, 1:col_index]))
   result_df <- result_df[order(original_order), ]
 
-  # Convert to tibble if tibble package is installed
-  if (requireNamespace("tibble", quietly = TRUE)) {
-    result_df <- tryCatch(
-      tibble::as_tibble(result_df),
-      error = function(e) {
-        # Return the data frame directly if tibble package is not available
-        return(result_df)
-      }
-    )
-  }
-
-  return(result_df)
+  return(tibble::tibble(result_df))
 }
 
 

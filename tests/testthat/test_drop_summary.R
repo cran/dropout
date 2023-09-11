@@ -8,7 +8,7 @@ test_that("drop_summary returns correct statistics for each column", {
     q2 = c(1, NA, NA, NA, NA),
     q3 = c(1, 2, 3, 4, NA)
   )
-  result <- drop_summary(sample_data)
+  result <- drop_summary(sample_data, last_col = 3)
 
   # Check statistics for column 'q1'
   expect_equal(result[result$column_name == 'q1', 'dropout'][[1]], 1)
