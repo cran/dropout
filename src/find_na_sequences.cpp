@@ -24,6 +24,9 @@ List find_na_sequences(DataFrame sec_data, int section_min) {
         } else if (TYPEOF(col) == STRSXP) {
           is_na = (STRING_ELT(col, row_index) == NA_STRING);
         }
+        else if (TYPEOF(col) == LGLSXP) {
+          is_na = (LOGICAL(col)[row_index] == NA_LOGICAL);
+        }
         // Add more types as needed
 
         if (is_na) {

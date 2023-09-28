@@ -1,4 +1,4 @@
-## ---- include = FALSE---------------------------------------------------------
+## ----include = FALSE----------------------------------------------------------
 knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>"
@@ -7,14 +7,14 @@ knitr::opts_chunk$set(
 ## -----------------------------------------------------------------------------
 library(dropout)
 
-## ----  message=FALSE----------------------------------------------------------
+## ----message=FALSE------------------------------------------------------------
 library(dplyr)
 data("flying")
 
 ## -----------------------------------------------------------------------------
 drop_summary(flying, "location_census_region")
 
-## ---- fig.cap="Comparative Analysis of Age and Gender against Dropout Rates"----
+## ----fig.cap="Comparative Analysis of Age and Gender against Dropout Rates"----
 library(ggplot2)
 
 flying %>%

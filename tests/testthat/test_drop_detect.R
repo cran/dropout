@@ -46,3 +46,6 @@ test_that("drop_detect handles missing last_col gracefully", {
 
   expect_error(drop_detect(sample_data, "q5"))
 })
+
+
+

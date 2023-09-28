@@ -27,6 +27,9 @@
 
 drop_detect <- function(data, last_col = NULL) {
 
+  data <- data |>
+    dplyr::mutate(dplyr::across(dplyr::everything(), as.character))
+
  if (is.null(last_col)) {
   while (ncol(data) > 0) {
    last_col <- ncol(data)

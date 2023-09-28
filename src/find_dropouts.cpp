@@ -43,7 +43,14 @@ DataFrame find_dropouts(DataFrame df) {
             all_na = false;
             break;
           }
+        } else if (TYPEOF(df[k]) == LGLSXP) {
+          LogicalVector col = df[k];
+          if (!LogicalVector::is_na(col[i])) {
+            all_na = false;
+            break;
+          }
         }
+
         // Extend this logic for other column types if needed
       }
 
