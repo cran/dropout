@@ -1,7 +1,28 @@
 #include <Rcpp.h>
 using namespace Rcpp;
+//' @name find_dropouts
+ //' @title Identify Dropouts in a Data Frame
+ //' @description This function iterates through each row of the provided data frame to identify
+ //' the first column from the left where all subsequent columns contain NA values, indicating
+ //' a dropout point. It then returns a data frame containing the name of the first dropout column,
+ //' a boolean indicating if a dropout was found, and the index of the dropout column for each row.
+ //'
+ //' @param df A DataFrame object containing the data to be analyzed.
+ //' @return A DataFrame containing three columns: \describe{
+ //'   \item{dropout_col}{The name of the first column where a dropout occurs. NA if no dropout is found.}
+ //'   \item{dropout}{LogicalVector indicating whether a dropout was found in the row.}
+ //'   \item{dropout_index}{The index of the dropout column. NA if no dropout is found.}
+ //' }
+ //' @examples
+ //' df <- data.frame(
+ //'   x = c(1, NA, 3),
+ //'   y = c(4, NA, NA),
+ //'   z = c(NA, NA, NA)
+ //' )
+ //' find_dropouts(df)
+ //' @export
+ // [[Rcpp::export]]
 
-// [[Rcpp::export]]
 DataFrame find_dropouts(DataFrame df) {
 
   int nRows = df.nrows();

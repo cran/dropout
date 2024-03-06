@@ -12,17 +12,19 @@ test_that("drop_summary returns correct statistics for each column", {
 
   # Check statistics for column 'q1'
   expect_equal(result[result$column_name == 'q1', 'dropout'][[1]], 1)
-  expect_equal(result[result$column_name == 'q1', 'drop_rate'][[1]], 0.2)
+  expect_equal(result[result$column_name == 'q1', 'cum_drop_rate'][[1]], 0.2)
   expect_equal(result[result$column_name == 'q1', 'drop_na'][[1]], 1)
 
   # Check statistics for column 'q2'
   expect_equal(result[result$column_name == 'q2', 'dropout'][[1]], 0)
-  expect_equal(result[result$column_name == 'q2', 'drop_rate'][[1]], 0.2)
+  expect_equal(result[result$column_name == 'q2', 'cum_drop_rate'][[1]], 0.2)
   expect_equal(result[result$column_name == 'q2', 'drop_na'][[1]], 1)
 
   # Check statistics for column 'q3'
   expect_equal(result[result$column_name == 'q3', 'dropout'][[1]], 0)
-  expect_equal(result[result$column_name == 'q3', 'drop_rate'][[1]], 0.2)
+  expect_equal(result[result$column_name == 'q3', 'cum_drop_rate'][[1]], 0.2)
   expect_equal(result[result$column_name == 'q3', 'drop_na'][[1]], 1)
 })
+
+
 

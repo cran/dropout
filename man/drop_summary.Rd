@@ -16,9 +16,12 @@ drop_summary(data, last_col = NULL, section_min = 3)
 \value{
 A dataframe or tibble containing summary statistics about dropouts. Typical columns might include:
 \itemize{
-\item \code{question_name}: The name of the survey question or column.
-\item \code{dropout_count}: The number of dropouts at this question.
-\item \code{dropout_percentage}: The percentage of participants who dropped out at this question.
+\item \code{column_name}: Lists the names of the columns from your dataset that have been analyzed for dropouts.
+\item \code{dropout}: Contains the frequency of dropouts within each listed column, allowing you to see where dropout rates might be the most significant.
+\item \code{drop_rate}: Shows the percentage of dropout incidents in each column. This is useful for understanding the relative impact of dropouts in various parts of your dataset.
+\item \code{cum_drop_rate}: Shows the overall percentage of dropout incidents in each column.
+\item \code{drop_na}: Provides the percentage of missing values in each column that can be attributed specifically to dropouts. This offers insights into the nature of missing data.
+\item \code{section_na}: Indicates occurrences of missing values that span at least \code{n} consecutive columns (\code{n} defaults to 3). You can adjust this parameter using \code{section_min}
 }
 }
 \description{

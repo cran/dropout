@@ -77,22 +77,14 @@ When you use the `drop_summary` function, the output you receive is a compact ye
 - **`column_name`**: Lists the names of the columns from your dataset that have been analyzed for dropouts.
   
 - **`dropout`**: Contains the frequency of dropouts within each listed column, allowing you to see where dropout rates might be the most significant.
+
+- **`drop_rate`**: Shows the percentage of dropout incidents in each column. This is useful for understanding the relative impact of dropouts in various parts of your dataset.
   
-- **`drop_rate`**: Shows the overall percentage of dropout incidents in each column. This is useful for understanding the relative impact of dropouts in various parts of your dataset.
+- **`cum_drop_rate`**: Shows the overall percentage of dropout incidents in each column. 
   
 - **`drop_na`**: Provides the percentage of missing values in each column that can be attributed specifically to dropouts. This offers insights into the nature of missing data.
 
 - **`section_na`**: Indicates occurrences of missing values that span at least `n` consecutive columns (`n` defaults to 3). You can adjust this parameter using `section_min` as shown below:
-
-    ```R
-    drop_summary(data, last_col, section_min = n)
-    ```
-
-    This column is particularly useful for identifying participants who might skip entire sections of a survey without dropping out completely.
-  
-- **`single_na`**: Reveals the percentage of single-instance missing values in each column, which are not associated with systematic dropouts or section skips.
-  
-- **`completion_rate`**: Denotes the overall data completion rate for each analyzed column, enabling you to gauge the integrity and reliability of your dataset.
 
 
 ## Using `drop_detect` to Identify Dropouts

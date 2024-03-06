@@ -8,9 +8,12 @@
 #' @param section_min Indicates occurrences of missing values that span at least n consecutive columns (n defaults to 3)
 #'
 #' @return A dataframe or tibble containing summary statistics about dropouts. Typical columns might include:
-#' - `question_name`: The name of the survey question or column.
-#' - `dropout_count`: The number of dropouts at this question.
-#' - `dropout_percentage`: The percentage of participants who dropped out at this question.
+#'- `column_name`: Lists the names of the columns from your dataset that have been analyzed for dropouts.
+#'- `dropout`: Contains the frequency of dropouts within each listed column, allowing you to see where dropout rates might be the most significant.
+#'- `drop_rate`: Shows the percentage of dropout incidents in each column. This is useful for understanding the relative impact of dropouts in various parts of your dataset.
+#'- `cum_drop_rate`: Shows the overall percentage of dropout incidents in each column.
+#'- `drop_na`: Provides the percentage of missing values in each column that can be attributed specifically to dropouts. This offers insights into the nature of missing data.
+#'- `section_na`: Indicates occurrences of missing values that span at least `n` consecutive columns (`n` defaults to 3). You can adjust this parameter using `section_min`
 #'
 #' @examples
 #' # Basic usage
@@ -31,8 +34,7 @@
 
 drop_summary <- function(data, last_col = NULL, section_min = 3) {
 
-  data <- data |>
-    dplyr::mutate(dplyr::across(dplyr::everything(), as.character))
+  data <- dplyr::mutate(data, dplyr::across(dplyr::everything(), as.character))
 
   if (is.null(last_col)) {
     while (ncol(data) > 0) {
@@ -40,8 +42,7 @@ drop_summary <- function(data, last_col = NULL, section_min = 3) {
       last_col_name <- colnames(data)[last_col]
 
       if (all(!is.na(data[, last_col]))) {
-        data <- data |>
-          dplyr::select(-last_col)
+        data <- dplyr::select(data, -{{last_col}})
       } else {
         warning(paste("last_col set to", last_col_name))
         break
@@ -49,12 +50,10 @@ drop_summary <- function(data, last_col = NULL, section_min = 3) {
     }
   } else {
     # Select all columns up to last_col
-    data <- data |>
-      dplyr::select(1:last_col)
+    data <- dplyr::select(data,1:{{last_col}})
   }
 
-  result <- data |>
-    find_dropouts()
+  result <- find_dropouts(data)
 
   # save result in a list (df and index)
   drop_df <- list(list_data = result,
@@ -79,7 +78,8 @@ drop_summary <- function(data, last_col = NULL, section_min = 3) {
   result_df <- data.frame(column_name = names(grouped_counts), dropout = as.vector(grouped_counts))
 
   # Compute drop rates and other metrics
-  result_df$drop_rate <- round(cumsum(result_df$dropout) / nrow(data), 2)
+  result_df$drop_rate <- round(result_df$dropout / nrow(data), 2)
+  result_df$cum_drop_rate <- round(cumsum(result_df$dropout) / nrow(data), 2)
   result_df$missing <- colSums(is.na(data[, 1:col_index]))
   result_df$completion_rate <- round((nrow(data) - result_df$missing) / nrow(data), 2)
 
@@ -105,8 +105,11 @@ drop_summary <- function(data, last_col = NULL, section_min = 3) {
   # Initialize variables for section dropout calculations
   result <- list()
 
-  result <- find_na_sequences(sec_data, section_min)
-
+  if(section_min < 1){
+    stop("`section_min` must be 1 or greater")
+  } else {
+    result <- find_na_sequences(sec_data, section_min)
+  }
   # Count how often each column appears in the sequences
   column_counts <- data.frame(table(unlist(result)))
 
@@ -133,7 +136,7 @@ drop_summary <- function(data, last_col = NULL, section_min = 3) {
   result_df$drop_na <- result_df$missing - result_df$single_na - result_df$section_na
 
   # Reorder the columns
-  result_df <- result_df[, c("column_name", "dropout", "drop_rate", "drop_na", "section_na", "single_na", "missing", "completion_rate")]
+  result_df <- result_df[, c("column_name", "dropout", "drop_rate", "cum_drop_rate", "drop_na", "section_na", "single_na", "missing", "completion_rate")]
 
   # Reorder the data frame based on the original column order
   original_order <- match(result_df$column_name, names(data[, 1:col_index]))
