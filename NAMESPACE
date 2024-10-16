@@ -2,5 +2,4 @@
 
 export(drop_detect)
 export(drop_summary)
-importFrom(Rcpp,sourceCpp)
-useDynLib(dropout)
+useDynLib(dropout, .registration = TRUE)

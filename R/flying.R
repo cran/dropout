@@ -38,6 +38,4 @@
 #'
 #' @examples
 #' data(flying)
-
 "flying"
-

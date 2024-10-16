@@ -2,42 +2,37 @@
 % Please edit documentation in R/drop_summary.R
 \name{drop_summary}
 \alias{drop_summary}
-\title{Summarizing Dropouts in Surveys}
+\title{Summarize Missing Data Metrics for Each Column}
 \usage{
-drop_summary(data, last_col = NULL, section_min = 3)
+drop_summary(data)
 }
 \arguments{
-\item{data}{A dataframe or tibble containing the survey data.}
-
-\item{last_col}{The index position or column name of the last survey item. This is optional and is used when there are additional columns in the data frame that are not part of the survey questions you are interested in.}
-
-\item{section_min}{Indicates occurrences of missing values that span at least n consecutive columns (n defaults to 3)}
+\item{data}{A dataframe for which to analyze missing data.}
 }
 \value{
-A dataframe or tibble containing summary statistics about dropouts. Typical columns might include:
+A dataframe containing the following columns:
 \itemize{
-\item \code{column_name}: Lists the names of the columns from your dataset that have been analyzed for dropouts.
-\item \code{dropout}: Contains the frequency of dropouts within each listed column, allowing you to see where dropout rates might be the most significant.
-\item \code{drop_rate}: Shows the percentage of dropout incidents in each column. This is useful for understanding the relative impact of dropouts in various parts of your dataset.
-\item \code{cum_drop_rate}: Shows the overall percentage of dropout incidents in each column.
-\item \code{drop_na}: Provides the percentage of missing values in each column that can be attributed specifically to dropouts. This offers insights into the nature of missing data.
-\item \code{section_na}: Indicates occurrences of missing values that span at least \code{n} consecutive columns (\code{n} defaults to 3). You can adjust this parameter using \code{section_min}
+\item \strong{column}: The name of each column in the input dataframe.
+\item \strong{drop}: The number of dropped rows (missing values) for that column.
+\item \strong{sec_na}: The number of sections of consecutive NAs for that column.
+\item \strong{sec_length}: The mode (most frequent length) of sections of consecutive NAs for that column.
+\item \strong{single_na}: The number of single NA values (isolated missing values) for that column.
+\item \strong{na}: The total number of missing (NA) values for that column.
+\item \strong{complete}: The proportion of complete rows for that column, where a value of 1 means no missing data, and values closer to 0 mean more missing data.
 }
 }
 \description{
-\code{drop_summary} function provides a high-level summary of dropout occurrences in the survey data.
-It generates key statistics to understand the patterns of participant dropouts across different survey questions.
+The \code{drop_summary} function generates a summary of missing data (NA values) for each column in a dataframe.
+It computes various metrics such as the number of dropout participants, section NAs, the mode length of those missing value sections for, and the proportion of complete cases for each column.
+}
+\details{
+The function calls a C API to compute some metrics, which are then processed and returned as a summary dataframe.
 }
 \examples{
-# Basic usage
-drop_summary(flying, "location_census_region")
-
-# Summarizing dropouts up to a specific column
-drop_summary(flying, last_col = "age")
-
-# Read more in the vignette for interpreting summary statistics and plotting dropout trends.
-
+\dontrun{
+# Example usage with the 'flying' dataframe
+summary_result <- drop_summary(flying)
+print(summary_result)
 }
-\seealso{
-See vignette for detailed workflows, tips on interpretation, and practical examples.
+
 }

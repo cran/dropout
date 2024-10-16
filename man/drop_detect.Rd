@@ -2,33 +2,29 @@
 % Please edit documentation in R/drop_detect.R
 \name{drop_detect}
 \alias{drop_detect}
-\title{Detecting Dropouts in Surveys}
+\title{Detect Instances of Dropout in Data}
 \usage{
-drop_detect(data, last_col = NULL)
+drop_detect(data)
 }
 \arguments{
-\item{data}{A dataframe or tibble containing the survey data.}
-
-\item{last_col}{The index position or column name of the last survey item. This is optional and is used when there are additional columns in the data frame that are not part of the survey questions you are interested in.}
+\item{data}{A dataframe in which to detect instances of dropout.}
 }
 \value{
-A dataframe or tibble where each row corresponds to a row in the original dataset. It contains three columns:
+A dataframe containing the following columns:
 \itemize{
-\item \code{dropout}: A logical indicating whether a dropout was detected for this row.
-\item \code{dropout_column}: If \code{dropout} is TRUE, the name of the column where the dropout occurred.
-\item \code{dropout_index}: If \code{dropout} is TRUE, the index (column number) where the dropout occurred.
+\item \strong{drop}: A logical value indicating whether dropout has occurred (\code{TRUE} for dropout, \code{FALSE} otherwise).
+\item \strong{drop_index}: The index of the column where dropout occurred (\code{NA} if no dropout).
+\item \strong{column}: The name of the column where the dropout occurred (\verb{<NA>} if no dropout).
 }
 }
 \description{
-\code{drop_detect} function detects participants who have dropped out of a survey.
-It identifies sequences of NA values up to the last survey question and pinpoints the column where the dropout occurred.
-It also provides the index of that column, enabling targeted analysis of dropout patterns.
+The \code{drop_detect} function detects participants who drop out of the survey by recognizing NA sequences up to the last question of the survey. Additionally, the function provides the column name and index where the dropout occurs.
 }
 \examples{
-# Basic usage
-drop_detect(flying, "location_census_region")
-
+\dontrun{
+# Example usage with the 'flying' dataframe
+detect_result <- drop_detect(flying)
+print(detect_result)
 }
-\seealso{
-See vignette for detailed workflows and practical examples.
+
 }

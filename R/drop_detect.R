@@ -1,53 +1,27 @@
-#' Detecting Dropouts in Surveys
+#' Detect Instances of Dropout in Data
 #'
-#' `drop_detect` function detects participants who have dropped out of a survey.
-#' It identifies sequences of NA values up to the last survey question and pinpoints the column where the dropout occurred.
-#' It also provides the index of that column, enabling targeted analysis of dropout patterns.
+#' The `drop_detect` function detects participants who drop out of the survey by recognizing NA sequences up to the last question of the survey. Additionally, the function provides the column name and index where the dropout occurs.
 #'
-#' @param data A dataframe or tibble containing the survey data.
-#' @param last_col The index position or column name of the last survey item. This is optional and is used when there are additional columns in the data frame that are not part of the survey questions you are interested in.
+#' @param data A dataframe in which to detect instances of dropout.
 #'
-#' @return A dataframe or tibble where each row corresponds to a row in the original dataset. It contains three columns:
-#' - `dropout`: A logical indicating whether a dropout was detected for this row.
-#' - `dropout_column`: If `dropout` is TRUE, the name of the column where the dropout occurred.
-#' - `dropout_index`: If `dropout` is TRUE, the index (column number) where the dropout occurred.
+#' @return A dataframe containing the following columns:
+#' \itemize{
+#'   \item \strong{drop}: A logical value indicating whether dropout has occurred (`TRUE` for dropout, `FALSE` otherwise).
+#'   \item \strong{drop_index}: The index of the column where dropout occurred (`NA` if no dropout).
+#'   \item \strong{column}: The name of the column where the dropout occurred (`<NA>` if no dropout).
+#' }
 #'
 #' @examples
-#' # Basic usage
-#' drop_detect(flying, "location_census_region")
-#'
-#' @seealso See vignette for detailed workflows and practical examples.
+#' \dontrun{
+#' # Example usage with the 'flying' dataframe
+#' detect_result <- drop_detect(flying)
+#' print(detect_result)
+#' }
 #'
 #' @export
-#'
-#' @useDynLib dropout
-#' @importFrom Rcpp sourceCpp
-
-
-
-drop_detect <- function(data, last_col = NULL) {
-
-  data <- dplyr::mutate(data, dplyr::across(dplyr::everything(), as.character))
-
- if (is.null(last_col)) {
-  while (ncol(data) > 0) {
-   last_col <- ncol(data)
-   last_col_name <- colnames(data)[last_col]
-
-   if (all(!is.na(data[, last_col]))) {
-    data <- dplyr::select(data, -{{last_col}})
-   } else {
-    warning(paste("last_col set to", last_col_name))
-    break
-   }
-  }
- } else {
-  # Select all columns up to last_col
-  data <- dplyr::select(data, 1:{{last_col}})
- }
-
- result <- tibble::tibble(find_dropouts(data))
-
- return(result)
+drop_detect <- function(data) {
+ c_output <- .Call("drop_d", c_prepare(data))
+ out <- metrics_detect(data, c_output)
+ return(out)
 }
 

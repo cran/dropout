@@ -15,186 +15,33 @@ knitr::opts_chunk$set(
 )
 ```
 
-```{r}
-library(dropout)
-```
-
 ## Introduction
 
-Survey data often encounters the challenge of dropout – instances where participants fail to complete sections of the survey due to interruptions or omissions. Handling dropouts effectively is crucial for accurate data analysis and interpretation. The dropout package provides a solution by offering insights into participant behavior during the survey process.
+Survey data frequently faces the issue of dropout — situations where participants leave sections of the survey incomplete. Effectively managing dropouts is key to preserving data quality and gaining a deeper understanding of participants' response patterns. The dropout package addresses this challenge by providing tools to analyze and interpret participant behavior throughout the survey process.
 
-## Understanding the Dropout Package
-
-The dropout package empowers you with the capability to extract valuable insights from your dataset, such as:
+## Use cases of the dropout package
 
   * Identifying the specific survey points where participants tend to stop completing the survey.
   * Detecting sections that are frequently skipped by respondents.
   * Quantifying the extent and locations of dropouts within the survey.
   * Estimating the proportion of missing values attributed to dropouts in each column.
   * Profiling respondents who discontinued the survey and pinpointing their dropout points.
-  * And much more...
-
-By leveraging these insights, you can:
-
-  * Enhance data cleaning procedures by distinguishing dropouts and tailoring your approach accordingly.
-  * Adjust your analytical strategies to accommodate dropout-related biases in the dataset.
-  * Analyze omitted sections in conjunction with the collected data, yielding a comprehensive understanding.
-
-In this vignette, we will provide an in-depth overview of the dropout package's features and their practical utilization. We will use a sample dataset named "flying" to illustrate these concepts. This is a modified version of the Flying Etiquette Survey data behind the story: 41 percent of flyers say it's rude to recline your seat on an airplane. You can load this preinstalled dataset into your environment using the command `data(flying)`.
-
-## Prerequisites
-
-The package is designed for effortless integration with widely used data wrangling libraries such as dplyr from the tidyverse ecosystem. These libraries provide a rich toolkit for data manipulation and analysis. Additionally, in a recent update, substantial portions of the package's code were rewritten using C++, a high-performance programming language. This enhancement allows the `dropout` package to handle larger datasets efficiently. Consequently, it is well-suited for analyzing substantial volumes of data, making it a valuable tool for both small-scale and big data survey analyses.
-
-```{r,  message=FALSE}
-library(dplyr)
-data("flying")
-```
-
-
-## Exploring Dropout Insights with `drop_summary`
-
-Let's embark on a deeper exploration of the `dropout` package by delving into the `drop_summary` function. This function serves as a pivotal tool for gaining in-depth insights into dropout patterns within your dataset. To effectively utilize the `drop_summary` function, you should specify the last column in your dataset that corresponds to the survey items. If you leave out this part of the function, the package will attempt to automatically detect whether the last columns are part of the survey items. This is achieved by excluding the trailing columns that do not contain any missing values (NAs). While this automatic detection can be convenient in many cases, it might not always align with the specific structure of your dataset.
-
-If the automatic detection behavior does not suit the needs of your dataset, you have the flexibility to set the last_col parameter explicitly. By doing so, you inform the package about the exact location of the last item in your survey data. This manual specification ensures precise alignment with your dataset's structure and is particularly useful when dealing with unconventional or complex survey formats.
-
-For example, in the "flying" dataset, the final survey-related item is stored in the "location_census_region" column. Following this, the "survey_type" column contains supplementary survey information. Many datasets incorporate similar non-survey-related data, and it's crucial to consider such cases. 
-
-To gain a comprehensive overview of the dropout patterns within your dataset, consider the following code snippet:
 
 ```{r}
-drop_summary(flying, "location_census_region")
+library(dropout)
 ```
+## Quantifying Dropout with `drop_summary`
+The `drop_summary` function provides an overview of where and to what extent participants tend to stop answering questions. It highlights patterns of missing values, such as whether participants are skipping specific questions or entire sections of the survey.
 
-Now, let's delve into the intricacies of the `drop_summary` function and the valuable insights it provides in a structured format.
-
-#### Understanding the Output of `drop_summary`
-
-When you use the `drop_summary` function, the output you receive is a compact yet informative summary, packaged as either a dataframe or a tibble. This summary consists of multiple columns, each of which provides insights into different dimensions of dropout analysis within your dataset.
-
-#### Output Columns:
-
-- **`column_name`**: Lists the names of the columns from your dataset that have been analyzed for dropouts.
-  
-- **`dropout`**: Contains the frequency of dropouts within each listed column, allowing you to see where dropout rates might be the most significant.
-
-- **`drop_rate`**: Shows the percentage of dropout incidents in each column. This is useful for understanding the relative impact of dropouts in various parts of your dataset.
-  
-- **`cum_drop_rate`**: Shows the overall percentage of dropout incidents in each column. 
-  
-- **`drop_na`**: Provides the percentage of missing values in each column that can be attributed specifically to dropouts. This offers insights into the nature of missing data.
-
-- **`section_na`**: Indicates occurrences of missing values that span at least `n` consecutive columns (`n` defaults to 3). You can adjust this parameter using `section_min` as shown below:
-
-
-## Using `drop_detect` to Identify Dropouts
-
-One of the core tools in the `dropout` package is the `drop_detect` function. This function serves as a comprehensive tool for isolating and understanding individual participant dropout behaviors. Specifically, it reveals whether a participant has left the survey prematurely and pinpoints the exact juncture at which the dropout took place.
-
-The structure and usage of `drop_detect` are intentionally made to resonate with the `drop_summary` function, ensuring consistency and ease of adoption.
-
-### Output Columns:
-
-- **`dropout`**: A Boolean column (TRUE or FALSE). A `TRUE` value signifies that the respective participant exited the survey prematurely.
-  
-- **`dropout_column`**: For those marked as `TRUE` in the `dropout` column, this field specifies the exact column or question that triggered the dropout.
-  
-- **`dropout_index`**: Offers a direct reference to the row number where the dropout incident occurred, facilitating easier traceability.
-
-### Example Usage:
-
-For practical insights, consider applying `drop_detect` on the 'flying' dataset. Here's how you can achieve this:
-
-```r
-drop_detect(flying, "location_census_region")
+```{r}
+drop_summary(flying)
 ```
+## Detecting Specific Dropouts with `drop_detect`
+For a more detailed analysis, the `drop_detect` function identifies individual participants who dropped out of the survey. It returns the index of the participant and the column where the dropout occurred, helping you focus on the critical dropout points.
 
-Moreover, if you wish to append the extracted dropout details back to the original dataset, you can employ the `bind_cols` function from the `dplyr` package:
-
-```r
-drop_detect(flying, "location_census_region") %>% 
-  bind_cols(flying, .)
+```{r}
+drop_detect(flying) |>
+  head()
 ```
-
-Such integration of dropout specifics into the primary dataset can act as a preliminary step for more nuanced analyses, like zoning into specific dropout triggers, assessing commonalities among dropouts, or any other relevant exploratory exercises.
-
-Subsequent sections will delve into exemplified applications of this integrated approach.
-
-## Practical Workflow Examples
-
-### Cleaning Early Dropouts
-
-The `drop_detect` function can be useful for identifying and filtering out early dropouts, i.e., participants who stopped answering the survey at a specific column. For example, you can filter for participants who did not drop out early, or had a 'late' dropout in the demographic part of the questions, using the `dropout_index`:
-
-```r
-flying %>% 
-  drop_detect("location_census_region") %>% 
-  bind_cols(flying, .) %>% 
-  filter(dropout == FALSE | dropout_index > 22)
-```
-
-### Analyzing Specific Sections
-
-If you're interested in a specific section of questions and want to filter for dropouts and `section_na`, you have two approaches:
-
-#### Option 1: Creating a Subset
-In this approach, we create a subset of the data containing only the first 22 columns. We then apply the `drop_detect` function to this subset to identify dropouts and other relevant indicators:
-
-```r
-flying %>% 
-  select(1:22) %>%
-  drop_detect() %>% 
-  bind_cols(flying, .) %>% 
-  filter(dropout == FALSE)
-```
-
-#### Option 2: Setting the `last_col` Parameter
-You can specify the `last_col` parameter to the last question in the section, to identify all dropouts up to that point. If left out, the function will use the same detection steps of non survey related columns as described in `drop_summary` function.
-
-```r
-flying %>% 
-  drop_detect("smoking_violation") %>% 
-  bind_cols(flying, .) %>% 
-  filter(dropout == FALSE)
-```
-
-### Comparative Analysis: Age and Gender
-
-One practical application is to compare the demographics (e.g., age and gender) between those who left out a section and those who did not. The following code generates a bar graph that breaks down dropout rates by age group and gender.
-
-```{r, fig.cap="Comparative Analysis of Age and Gender against Dropout Rates"}
-library(ggplot2)
-
-flying %>%
-  drop_detect("smoking_violation") %>% 
-  bind_cols(flying, .) %>% 
-  filter(!is.na(gender)) %>% 
-  mutate(age = factor(age, levels = c("18-29", "30-44", "45-60", "> 60"))) %>% 
-  ggplot(aes(x=age, fill=dropout)) +
-  geom_bar(position="dodge") +
-  facet_grid(gender ~ .) +
-  theme(axis.text.x = element_text(angle = 90, hjust = 1))
-```
-
-By visualizing the data, you can more easily discern patterns and disparities among different demographic groups with respect to dropout rates.
-
-
-### Exploring Relationships: Dropout, Age and Gender
-
-Another interesting avenue is to explore whether there's a relationship between dropout behavior (or in this case leaving out a section) and demographic variables like age and gender:
-
-```r
-test <- flying %>%
-  drop_detect("smoking_violation") %>% 
-  bind_cols(flying, .) %>% 
-  filter(!is.na(gender)) %>%
-  select(dropout, age, gender) %>% 
-  mutate(dropout = as.numeric(ifelse(dropout == TRUE, 1, 0)))
-
-glm_model <- glm(dropout ~ gender + age, data = test, family = binomial)
-print(summary(glm_model))
-```
-
-This can be particularly useful for hypothesis testing and can aid in uncovering patterns in your data.
-
-
+## Data Cleaning Based on Dropout Information
+With the output from drop_detect, you can refine your data by filtering participants. For instance, you may choose to retain only those who completed most of the survey or analyze patterns of early dropout for further insights.
